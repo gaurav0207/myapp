@@ -1,10 +1,13 @@
 <template>
-  <div class="flex align-items-center" style="max-height: 250px">
-    <div id="container">
+  <div class="flex align-items-center" style="height: 85%">
+    <div class="video">
       <video muted autoplay></video>
-
-      <div id="webcamcontrols">
+      <div class="video-cancel">
+        <ion-icon @click="closeModal" :icon="closeOutline"></ion-icon>
+      </div>
+      <div class="video-controls">
         <ion-button
+          v-if="mediaRecord && mediaRecord.state === 'inactive'"
           class="ion-margin-top"
           type="primary"
           id="record"
@@ -12,6 +15,7 @@
           >Start</ion-button
         >
         <ion-button
+          v-if="mediaRecord && mediaRecord.state !== 'inactive'"
           class="ion-margin-top"
           type="primary"
           id="record"
@@ -26,55 +30,53 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-
-import { IonButton } from "@ionic/vue";
-
+import { IonButton, IonIcon } from "@ionic/vue";
+import { closeOutline } from "ionicons/icons";
 interface State {
   webcamstream: any;
-
   streamRecorder: any;
-
   list: any;
-
   buttonText: string;
   mediaRecord: any;
 }
-
 export default defineComponent({
   name: "Video",
-
+  setup() {
+    return { closeOutline };
+  },
   data() {
     return {
       webcamstream: null,
-
       streamRecorder: {},
-
       list: "",
       mediaRecord: {},
-
       buttonText: "Record",
     } as State;
   },
-
   components: {
     IonButton,
+    IonIcon,
   },
-
+  mounted() {
+    this.initalizeVideo();
+  },
+  beforeUnmount() {
+    if (this.webcamstream) {
+      this.webcamstream.getTracks().forEach(function(track: any) {
+        track.stop();
+      });
+    }
+  },
   methods: {
     initalizeVideo() {
       const mimeType = "audio/webm";
-
       const w: any = window;
-
       this.mediaRecord = new w.MediaRecorder(this.webcamstream, {
         type: mimeType,
       });
-
       let chunks: any = [];
-      console.log(this.mediaRecord);
       this.mediaRecord.addEventListener("dataavailable", (event: any) => {
         if (typeof event.data === "undefined") return;
-
         if (event.data.size === 0) return;
         console.log(event.data);
         chunks.push(event.data);
@@ -90,10 +92,8 @@ export default defineComponent({
     async startRecording() {
       const constraints = {
         video: { width: { exact: 640 }, height: { exact: 480 } },
-
         audio: true,
       };
-
       const video: any = document.querySelector("video");
       await navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
         video.srcObject = stream;
@@ -103,30 +103,44 @@ export default defineComponent({
       this.mediaRecord.start();
     },
     stopRecording() {
-      console.log(this.mediaRecord, "stop");
       this.mediaRecord.stop();
     },
     renderRecording(blob: any) {
-      console.log(blob);
-
-      this.list = blob;
-
-      //   this.$emit("hide-video");
-
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, "_blank");
-      this.webcamstream;
-      this.webcamstream.getTracks().forEach(function(track: any) {
-        track.stop();
-      });
+      this.$store.dispatch("Media/addVideos", blob);
+      this.$emit("reset-component");
+    },
+    closeModal() {
+      this.$emit("reset-component");
     },
   },
 });
 </script>
 
-<style scoped>
-video {
-  width: 100%;
-  height: 200px;
+<style lang="scss" scoped>
+.video {
+  position: relative;
+  height: 100%;
+  & video {
+    width: 100%;
+  }
+  &-cancel {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    padding: 4px 6px 1px 5px;
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  }
+  &-controls {
+    display: flex;
+    position: absolute;
+    bottom: 0px;
+    width: 50%;
+    opacity: 1;
+    left: 25%;
+  }
 }
 </style>
