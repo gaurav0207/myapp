@@ -6,8 +6,9 @@
         <ion-icon @click="closeModal" :icon="closeOutline"></ion-icon>
       </div>
       <div class="video-controls">
+        {{ mediaRecord }}
         <ion-button
-          v-if="mediaRecord && mediaRecord.state === 'inactive'"
+          v-if="!recording"
           class="ion-margin-top"
           type="primary"
           id="record"
@@ -15,7 +16,7 @@
           >Start</ion-button
         >
         <ion-button
-          v-if="mediaRecord && mediaRecord.state !== 'inactive'"
+          v-if="recording"
           class="ion-margin-top"
           type="primary"
           id="record"
@@ -38,6 +39,7 @@ interface State {
   list: any;
   buttonText: string;
   mediaRecord: any;
+  recording: boolean;
 }
 export default defineComponent({
   name: "Video",
@@ -51,6 +53,7 @@ export default defineComponent({
       list: "",
       mediaRecord: {},
       buttonText: "Record",
+      recording: false,
     } as State;
   },
   components: {
@@ -66,6 +69,7 @@ export default defineComponent({
         track.stop();
       });
     }
+    this.recording = false;
   },
   methods: {
     async initalizeVideo() {
@@ -100,9 +104,11 @@ export default defineComponent({
     },
     startRecording() {
       this.mediaRecord.start();
+      this.recording = true;
     },
     stopRecording() {
       this.mediaRecord.stop();
+      this.recording = false;
     },
     renderRecording(blob: any) {
       this.$store.dispatch("Media/addVideos", blob);
