@@ -68,9 +68,18 @@ export default defineComponent({
     }
   },
   methods: {
-    initalizeVideo() {
+    async initalizeVideo() {
       const mimeType = "audio/webm";
       const w: any = window;
+      const constraints = {
+        video: { width: { exact: 640 }, height: { exact: 480 } },
+        audio: true,
+      };
+      const video: any = document.querySelector("video");
+      await navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+        video.srcObject = stream;
+        this.webcamstream = stream;
+      });
       this.mediaRecord = new w.MediaRecorder(this.webcamstream, {
         type: mimeType,
       });
@@ -89,17 +98,7 @@ export default defineComponent({
         chunks = [];
       });
     },
-    async startRecording() {
-      const constraints = {
-        video: { width: { exact: 640 }, height: { exact: 480 } },
-        audio: true,
-      };
-      const video: any = document.querySelector("video");
-      await navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-        video.srcObject = stream;
-        this.webcamstream = stream;
-        this.initalizeVideo();
-      });
+    startRecording() {
       this.mediaRecord.start();
     },
     stopRecording() {
